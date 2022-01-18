@@ -1,41 +1,55 @@
-import React, {useState} from "react";
+import React, {useMemo, useState} from "react";
 import classes from './Quiz.module.css';
 import ActiveQuiz from "../../components/ActiveQuiz/ActiveQuiz";
 import FinishedQuiz from "../../components/FinishedQuiz/FinishedQuiz";
-// import {useParams} from "react-router-dom";
+import {useParams} from "react-router-dom";
+import axios from "../../axios/axios-quiz";
+import Loader from "../../components/UI/Loader/Loader";
 
-const quizDefault = [
-    {
-        question: 'Какого цвета небо?',
-        rightAnswerId: 2,
-        id: 1,
-        answers: [
-            {text: 'Черный', id: 1},
-            {text: 'Синий', id: 2},
-            {text: 'Красный', id: 3},
-            {text: 'Зеленый', id: 4},
-        ]
-    },
-    {
-        question: 'Второй вопрос?',
-        rightAnswerId: 3,
-        id: 2,
-        answers: [
-            {text: '12', id: 1},
-            {text: '13', id: 2},
-            {text: '14', id: 3},
-            {text: '15', id: 4},
-        ]
-    },
-];
+// const quizDefault = [
+//     {
+//         question: 'Какого цвета небо?',
+//         rightAnswerId: 2,
+//         id: 1,
+//         answers: [
+//             {text: 'Черный', id: 1},
+//             {text: 'Синий', id: 2},
+//             {text: 'Красный', id: 3},
+//             {text: 'Зеленый', id: 4},
+//         ]
+//     },
+//     {
+//         question: 'Второй вопрос?',
+//         rightAnswerId: 3,
+//         id: 2,
+//         answers: [
+//             {text: '12', id: 1},
+//             {text: '13', id: 2},
+//             {text: '14', id: 3},
+//             {text: '15', id: 4},
+//         ]
+//     },
+// ];
 
 const Quiz = () => {
     const [results, setResults] = useState({}); //{[id]: 'success', 'error'}
     const [isFinished, setIsFinished] = useState(false);
     const [activeQuestion, setActiveQuestion] = useState(0);
     const [answerState, setAnswerState] = useState(null);
-    const [quiz] = useState(quizDefault);
+    const [quiz, setQuiz] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const {id} = useParams();
 
+    useMemo(async () => {
+        try {
+            const response = await axios.get(`/quizes/${id}.json`);
+            const quiz = response.data;
+            setQuiz(quiz);
+            setLoading(false);
+        } catch (e) {
+            console.log(e);
+        }
+    }, [id]);
     const onAnswerClickHandler = (answerId) => {
         if (answerState) {
             const [key] = Object.keys(answerState);
@@ -86,21 +100,20 @@ const Quiz = () => {
                 <h1>
                     Ответьте на все вопросы
                 </h1>
-                {
-                    isFinished ?
-                        <FinishedQuiz
-                            results={results}
-                            quiz={quiz}
-                            onRetry={retryHandler}
-                        /> :
-                        <ActiveQuiz
-                            question={quiz[activeQuestion].question}
-                            answers={quiz[activeQuestion].answers}
-                            onAnswerClick={onAnswerClickHandler}
-                            quizLength={quiz.length}
-                            answerNumber={activeQuestion + 1}
-                            state={answerState}
-                        />
+                {loading ? <Loader/> : isFinished ?
+                    <FinishedQuiz
+                        results={results}
+                        quiz={quiz}
+                        onRetry={retryHandler}
+                    /> :
+                    <ActiveQuiz
+                        question={quiz[activeQuestion].question}
+                        answers={quiz[activeQuestion].answers}
+                        onAnswerClick={onAnswerClickHandler}
+                        quizLength={quiz.length}
+                        answerNumber={activeQuestion + 1}
+                        state={answerState}
+                    />
                 }
             </div>
         </div>
